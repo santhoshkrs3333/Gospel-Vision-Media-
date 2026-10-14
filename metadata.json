@@ -1,0 +1,6 @@
+{
+  "name": "Gospel Vision Media | Premium Music Distribution",
+  "description": "High-end, professional music distribution to Spotify, Apple Music, and 26+ platforms with express delivery within 6 hours.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

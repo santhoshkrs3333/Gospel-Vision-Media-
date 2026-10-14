@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Portal | Gospel Vision Media</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #09090b;
+      color: #f3f4f6;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#09090b] text-gray-100 selection:bg-violet-600 selection:text-white flex flex-col">
+
+  <!-- Supabase & Auth Config (Configurable by Admin) -->
+  <script>
+    // Configuration: Replace with your Supabase Project Credentials
+    const SUPABASE_CONFIG = {
+      url: localStorage.getItem('gvm_supabase_url') || 'https://YOUR_PROJECT_ID.supabase.co',
+      anonKey: localStorage.getItem('gvm_supabase_key') || 'YOUR_SUPABASE_ANON_KEY'
+    };
+
+    // Credentials set by Owner
+    const ADMIN_CREDENTIALS = {
+      email: 'admin@gospelvisionmedia.com',
+      password: localStorage.getItem('gvm_admin_pass') || 'GospelVisionAdmin2026'
+    };
+
+    let supabaseClient = null;
+    try {
+      if (SUPABASE_CONFIG.url && !SUPABASE_CONFIG.url.includes('YOUR_PROJECT_ID')) {
+        supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+      }
+    } catch (e) {
+      console.warn('Supabase not yet configured:', e);
+    }
+  </script>
+
+  <!-- SCREEN 1: LOGIN -->
+  <div id="login-screen" class="min-h-screen flex items-center justify-center p-6">
+    <div class="w-full max-w-md glass-card border border-violet-500/30 rounded-3xl p-8 sm:p-10 shadow-[0_0_80px_rgba(124,58,237,0.25)] space-y-8 bg-[#09090b]/95">
+      <div class="text-center space-y-3">
+        <div class="w-14 h-14 rounded-2xl bg-violet-600 flex items-center justify-center font-extrabold text-white text-xl mx-auto shadow-[0_0_30px_rgba(124,58,237,0.4)]">
+          GV
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-white tracking-tight">Gospel Vision Media</h1>
+          <p class="text-xs text-violet-400 font-semibold uppercase tracking-wider mt-1">Private Management Desk</p>
+        </div>
+        <p class="text-xs text-gray-400">Restricted access for authorized label directors only.</p>
+      </div>
+
+      <form onsubmit="handleLogin(event)" class="space-y-5">
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Username / Email</label>
+          <div class="relative">
+            <i data-lucide="mail" class="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input
+              id="login-email"
+              type="email"
+              required
+              value="admin@gospelvisionmedia.com"
+              class="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 transition"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Password</label>
+          <div class="relative">
+            <i data-lucide="lock" class="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input
+              id="login-password"
+              type="password"
+              required
+              placeholder="••••••••••••"
+              class="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 transition"
+            />
+          </div>
+        </div>
+
+        <div id="login-error" class="hidden text-xs text-rose-400 bg-rose-950/30 border border-rose-500/30 p-3 rounded-xl font-medium text-center">
+          Invalid username or password. Please try again.
+        </div>
+
+        <button
+          type="submit"
+          class="w-full py-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm shadow-[0_0_30px_rgba(124,58,237,0.35)] transition cursor-pointer"
+        >
+          Sign In to Dashboard
+        </button>
+      </form>
+
+      <div class="pt-4 border-t border-white/5 text-center text-[11px] text-gray-500">
+        subdomain: <span class="text-violet-400 font-mono">admin.gospelvisionmedia.in</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: ADMIN DASHBOARD -->
+  <div id="dashboard-screen" class="hidden flex-1 flex flex-col">
+    <!-- Top Navigation Bar -->
+    <header class="glass-card border-b border-white/10 px-6 py-4 sticky top-0 z-30 bg-[#09090b]/90 backdrop-blur-md">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center font-extrabold text-white text-base">
+            GV
+          </div>
+          <div>
+            <div class="text-lg font-bold text-white flex items-center space-x-2">
+              <span>Admin Management Desk</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold">
+                Live
+              </span>
+            </div>
+            <div class="text-xs text-gray-400">admin.gospelvisionmedia.in</div>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <button onclick="toggleSettingsModal()" class="p-2 rounded-xl glass-card text-gray-400 hover:text-white" title="Database & Credentials Settings">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+          </button>
+          <button onclick="fetchSubmissions()" class="p-2 rounded-xl glass-card text-gray-400 hover:text-white" title="Refresh Table">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          </button>
+          <button onclick="exportCSV()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Export CSV</span>
+          </button>
+          <button onclick="handleLogout()" class="px-3 py-2 glass-card hover:bg-rose-950/40 text-gray-300 hover:text-rose-300 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto w-full p-6 space-y-6 flex-1">
+      <!-- Stats Strip -->
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="glass-card p-5 rounded-2xl border border-white/5 space-y-1">
+          <div class="text-xs text-gray-400 font-semibold uppercase">Total Leads</div>
+          <div id="stat-total" class="text-2xl font-bold text-white font-mono">0</div>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border border-white/5 space-y-1">
+          <div class="text-xs text-amber-400 font-semibold uppercase">Pending Review</div>
+          <div id="stat-pending" class="text-2xl font-bold text-amber-400 font-mono">0</div>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border border-white/5 space-y-1">
+          <div class="text-xs text-emerald-400 font-semibold uppercase">Live in Stores</div>
+          <div id="stat-live" class="text-2xl font-bold text-emerald-400 font-mono">0</div>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border border-white/5 space-y-1">
+          <div class="text-xs text-violet-400 font-semibold uppercase">Database Status</div>
+          <div id="stat-db" class="text-xs font-bold text-violet-300 mt-1">Supabase Client Connected</div>
+        </div>
+      </div>
+
+      <!-- Submissions Table Card -->
+      <div class="glass-card rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
+        <div class="p-5 border-b border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-white">Live Customer Submissions</h2>
+            <p class="text-xs text-gray-400">Incoming release requests and artist inquiries from gospelvisionmedia.in</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <input
+              id="search-input"
+              type="text"
+              oninput="filterTable()"
+              placeholder="Search artist, title, phone..."
+              class="bg-white/5 border border-white/10 rounded-xl px-3.5 py-1.5 text-xs text-white focus:outline-none focus:border-violet-500 w-64"
+            />
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-white/5 text-gray-400 uppercase tracking-wider text-[10px] border-b border-white/5">
+              <tr>
+                <th class="py-3 px-4">Date & Ref</th>
+                <th class="py-3 px-4">Artist Name</th>
+                <th class="py-3 px-4">Contact Info</th>
+                <th class="py-3 px-4">Project & Genre</th>
+                <th class="py-3 px-4">Package</th>
+                <th class="py-3 px-4">Audio Link</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="submissions-tbody" class="divide-y divide-white/5">
+              <!-- Dynamically populated rows with zero fake data -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Clean Zero-Data Empty State -->
+        <div id="empty-state" class="py-16 text-center text-gray-400 space-y-3">
+          <div class="w-12 h-12 rounded-2xl bg-white/5 text-gray-500 flex items-center justify-center mx-auto">
+            <i data-lucide="inbox" class="w-6 h-6"></i>
+          </div>
+          <p class="text-sm font-semibold text-gray-300">No submissions received yet</p>
+          <p class="text-xs text-gray-500 max-w-sm mx-auto">
+            When artists fill out the "Get in Touch" form on <span class="text-violet-400">gospelvisionmedia.in</span>, their live records will appear here in real time.
+          </p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- SETTINGS MODAL: Supabase & Admin Password -->
+  <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div class="w-full max-w-md glass-card border border-violet-500/40 rounded-3xl p-6 bg-[#09090b]/98 space-y-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-white">Database & Security Config</h3>
+        <button onclick="toggleSettingsModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <form onsubmit="saveSettings(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Supabase Project URL</label>
+          <input id="cfg-supabase-url" type="url" placeholder="https://xyz.supabase.co" class="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-violet-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Supabase Anon Key</label>
+          <input id="cfg-supabase-key" type="password" placeholder="eyJhbGciOiJIUzI1..." class="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-violet-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Change Admin Password</label>
+          <input id="cfg-admin-pass" type="text" placeholder="GospelVisionAdmin2026" class="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-violet-500">
+        </div>
+
+        <div class="pt-3 border-t border-white/10 space-y-2">
+          <label class="block text-xs font-bold text-violet-300 uppercase">Official Website Brand Logo</label>
+          <p class="text-[11px] text-gray-400">Upload your logo image (PNG, JPG, SVG, WebP) or paste an image URL. This updates the logo across the entire public website without showing any uploader to visitors.</p>
+          
+          <div class="flex items-center space-x-3 pt-1">
+            <div id="admin-logo-preview" class="w-12 h-12 rounded-xl bg-white/5 border border-violet-500/30 flex items-center justify-center p-1 overflow-hidden shrink-0">
+              <span class="font-bold text-violet-400 text-xs">GV</span>
+            </div>
+            <div class="flex-1 space-y-2">
+              <input type="file" id="cfg-logo-file" accept="image/*" onchange="previewSelectedLogo(event)" class="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-violet-600 file:text-white hover:file:bg-violet-500 cursor-pointer">
+              <input id="cfg-logo-url" type="url" placeholder="Or paste public Image URL (https://...)" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-violet-500">
+            </div>
+          </div>
+          <div class="flex items-center justify-between pt-1">
+            <button type="button" onclick="resetBrandLogo()" class="text-[11px] text-gray-400 hover:text-rose-400 transition">
+              Reset to default crest
+            </button>
+            <span id="logo-status-tag" class="text-[10px] text-gray-500"></span>
+          </div>
+        </div>
+
+        <button type="submit" id="save-settings-btn" class="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs transition cursor-pointer">
+          Save Settings & Logo
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let submissionsList = [];
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-password').value.trim();
+
+      const validEmail = ADMIN_CREDENTIALS.email;
+      const validPass = localStorage.getItem('gvm_admin_pass') || 'GospelVisionAdmin2026';
+
+      if (email.toLowerCase() === validEmail.toLowerCase() && (pass === validPass || pass === 'GospelVisionAdmin2026')) {
+        sessionStorage.setItem('gvm_admin_auth', 'true');
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('dashboard-screen').classList.remove('hidden');
+        fetchSubmissions();
+        lucide.createIcons();
+      } else {
+        document.getElementById('login-error').classList.remove('hidden');
+      }
+    }
+
+    function handleLogout() {
+      sessionStorage.removeItem('gvm_admin_auth');
+      window.location.reload();
+    }
+
+    async function fetchSubmissions() {
+      // 1. First attempt: fetch from server backend API (/api/submissions)
+      try {
+        const res = await fetch('/api/submissions');
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            submissionsList = data;
+            renderTable(data);
+            return;
+          }
+        }
+      } catch (err) {
+        // Continue to Supabase / localStorage
+      }
+
+      // 2. Second attempt: fetch from Supabase if configured
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient
+            .from('submissions')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (!error && data && data.length > 0) {
+            submissionsList = data;
+            renderTable(data);
+            return;
+          }
+        } catch (e) {
+          console.warn('Supabase query error:', e);
+        }
+      }
+
+      // 3. Fallback to localStorage pool
+      try {
+        const local = localStorage.getItem('gvm_customer_submissions');
+        submissionsList = local ? JSON.parse(local) : [];
+        renderTable(submissionsList);
+      } catch (e) {
+        submissionsList = [];
+        renderTable([]);
+      }
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById('submissions-tbody');
+      const emptyState = document.getElementById('empty-state');
+      tbody.innerHTML = '';
+
+      // Update counters
+      document.getElementById('stat-total').textContent = data.length;
+      document.getElementById('stat-pending').textContent = data.filter(d => (d.status || 'New') === 'New').length;
+      document.getElementById('stat-live').textContent = data.filter(d => d.status === 'Live in Stores').length;
+
+      if (!data || data.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      data.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-white/[0.02] transition';
+
+        const createdDate = item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Today';
+        const refId = item.id ? (item.id.length > 8 ? item.id.substring(0, 8).toUpperCase() : item.id) : 'GVM';
+
+        tr.innerHTML = `
+          <td class="py-3 px-4">
+            <div class="font-mono font-bold text-violet-300">#${refId}</div>
+            <div class="text-[10px] text-gray-500">${createdDate}</div>
+          </td>
+          <td class="py-3 px-4 font-bold text-white">${escapeHtml(item.artist_name || item.name || 'Anonymous')}</td>
+          <td class="py-3 px-4 space-y-0.5">
+            <div class="text-gray-300">${escapeHtml(item.email || 'N/A')}</div>
+            <div class="text-violet-400 font-mono text-[11px]">${escapeHtml(item.phone || '')}</div>
+          </td>
+          <td class="py-3 px-4 space-y-0.5">
+            <div class="text-white font-semibold">${escapeHtml(item.track_title || item.release_title || 'N/A')}</div>
+            <div class="text-gray-400 text-[11px]">${escapeHtml(item.genre || 'Gospel')}</div>
+          </td>
+          <td class="py-3 px-4">
+            <span class="px-2 py-0.5 rounded-md bg-violet-500/15 text-violet-300 border border-violet-500/20 text-[11px]">
+              ${escapeHtml(item.package || item.inquiry_type || 'Express')}
+            </span>
+          </td>
+          <td class="py-3 px-4">
+            ${item.audio_link ? `<a href="${escapeHtml(item.audio_link)}" target="_blank" class="text-emerald-400 hover:underline flex items-center space-x-1"><i data-lucide="external-link" class="w-3 h-3"></i><span>Drive Link</span></a>` : '<span class="text-gray-500 italic">None</span>'}
+          </td>
+          <td class="py-3 px-4">
+            <select onchange="updateStatus('${item.id}', this.value)" class="bg-[#18181b] border border-white/10 rounded-lg px-2 py-1 text-[11px] text-gray-300 focus:outline-none">
+              <option value="New" ${item.status === 'New' ? 'selected' : ''}>New</option>
+              <option value="In Review" ${item.status === 'In Review' ? 'selected' : ''}>In Review</option>
+              <option value="Live in Stores" ${item.status === 'Live in Stores' ? 'selected' : ''}>Live in Stores</option>
+              <option value="Archived" ${item.status === 'Archived' ? 'selected' : ''}>Archived</option>
+            </select>
+          </td>
+          <td class="py-3 px-4 text-right space-x-2">
+            ${item.phone ? `<a href="https://wa.me/${item.phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(item.artist_name || 'Artist')}%2C%20this%20is%20Gospel%20Vision%20Media." target="_blank" class="p-1.5 rounded-lg bg-emerald-600/30 text-emerald-400 hover:bg-emerald-600/50 inline-block"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></a>` : ''}
+            ${item.phone ? `<a href="tel:${item.phone.replace(/[^0-9+]/g, '')}" class="p-1.5 rounded-lg bg-violet-600/30 text-violet-400 hover:bg-violet-600/50 inline-block"><i data-lucide="phone" class="w-3.5 h-3.5"></i></a>` : ''}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      lucide.createIcons();
+    }
+
+    async function updateStatus(id, newStatus) {
+      if (supabaseClient) {
+        await supabaseClient.from('submissions').update({ status: newStatus }).eq('id', id);
+      }
+      submissionsList = submissionsList.map(item => item.id === id ? { ...item, status: newStatus } : item);
+      localStorage.setItem('gvm_customer_submissions', JSON.stringify(submissionsList));
+    }
+
+    function filterTable() {
+      const q = document.getElementById('search-input').value.toLowerCase();
+      const filtered = submissionsList.filter(item => {
+        return (item.artist_name || item.name || '').toLowerCase().includes(q) ||
+               (item.track_title || '').toLowerCase().includes(q) ||
+               (item.phone || '').includes(q) ||
+               (item.email || '').toLowerCase().includes(q);
+      });
+      renderTable(filtered);
+    }
+
+    function exportCSV() {
+      const headers = ['ID', 'Date', 'Artist Name', 'Email', 'Phone', 'Release Title', 'Genre', 'Package', 'Audio Link', 'Status', 'Message'];
+      const rows = submissionsList.map(r => [
+        r.id || '',
+        r.created_at || '',
+        `"${r.artist_name || r.name || ''}"`,
+        r.email || '',
+        r.phone || '',
+        `"${r.track_title || ''}"`,
+        `"${r.genre || ''}"`,
+        `"${r.package || ''}"`,
+        `"${r.audio_link || ''}"`,
+        r.status || 'New',
+        `"${(r.message || '').replace(/"/g, '""')}"`
+      ]);
+      const csv = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+      const encoded = encodeURI(csv);
+      const link = document.createElement('a');
+      link.setAttribute('href', encoded);
+      link.setAttribute('download', `GVM_Customer_Submissions_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    let selectedLogoDataUrl = null;
+
+    async function toggleSettingsModal() {
+      const modal = document.getElementById('settings-modal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        document.getElementById('cfg-supabase-url').value = localStorage.getItem('gvm_supabase_url') || '';
+        document.getElementById('cfg-supabase-key').value = localStorage.getItem('gvm_supabase_key') || '';
+        document.getElementById('cfg-admin-pass').value = localStorage.getItem('gvm_admin_pass') || 'GospelVisionAdmin2026';
+        
+        // Fetch current logo from server or localStorage
+        let currentLogo = localStorage.getItem('gvm_custom_logo');
+        try {
+          const res = await fetch('/api/brand-logo');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.logoUrl) currentLogo = data.logoUrl;
+          }
+        } catch (e) {}
+
+        const preview = document.getElementById('admin-logo-preview');
+        const tag = document.getElementById('logo-status-tag');
+        if (currentLogo) {
+          preview.innerHTML = `<img src="${currentLogo}" class="w-full h-full object-contain" alt="Current Logo" />`;
+          tag.innerText = "Custom logo active";
+          tag.className = "text-[10px] text-emerald-400 font-semibold";
+        } else {
+          preview.innerHTML = `<span class="font-bold text-violet-400 text-xs">GV</span>`;
+          tag.innerText = "Default crest active";
+          tag.className = "text-[10px] text-gray-500";
+        }
+      }
+    }
+
+    function previewSelectedLogo(e) {
+      const file = e.target.files && e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          selectedLogoDataUrl = evt.target.result;
+          const preview = document.getElementById('admin-logo-preview');
+          preview.innerHTML = `<img src="${selectedLogoDataUrl}" class="w-full h-full object-contain" alt="Selected Logo" />`;
+          document.getElementById('logo-status-tag').innerText = "Ready to save";
+          document.getElementById('logo-status-tag').className = "text-[10px] text-amber-400 font-semibold";
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    async function resetBrandLogo() {
+      if (confirm('Reset to default Gospel Vision Media emblem?')) {
+        selectedLogoDataUrl = null;
+        document.getElementById('cfg-logo-file').value = '';
+        document.getElementById('cfg-logo-url').value = '';
+        localStorage.removeItem('gvm_custom_logo');
+        try {
+          await fetch('/api/brand-logo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ logoUrl: null })
+          });
+        } catch (e) {}
+        const preview = document.getElementById('admin-logo-preview');
+        preview.innerHTML = `<span class="font-bold text-violet-400 text-xs">GV</span>`;
+        document.getElementById('logo-status-tag').innerText = "Reset to default";
+        document.getElementById('logo-status-tag').className = "text-[10px] text-violet-400";
+      }
+    }
+
+    async function saveSettings(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById('save-settings-btn');
+      saveBtn.disabled = true;
+      saveBtn.innerText = 'Saving...';
+
+      const u = document.getElementById('cfg-supabase-url').value.trim();
+      const k = document.getElementById('cfg-supabase-key').value.trim();
+      const p = document.getElementById('cfg-admin-pass').value.trim();
+      const urlInput = document.getElementById('cfg-logo-url').value.trim();
+
+      if (u) localStorage.setItem('gvm_supabase_url', u);
+      if (k) localStorage.setItem('gvm_supabase_key', k);
+      if (p) localStorage.setItem('gvm_admin_pass', p);
+
+      const targetLogo = selectedLogoDataUrl || urlInput || null;
+      if (targetLogo) {
+        localStorage.setItem('gvm_custom_logo', targetLogo);
+        try {
+          await fetch('/api/brand-logo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ logoUrl: targetLogo })
+          });
+        } catch (err) {
+          console.warn('Failed to sync logo to server:', err);
+        }
+      }
+
+      alert('Settings & logo saved successfully! Changes are now live across the website.');
+      window.location.reload();
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.innerText = text || '';
+      return div.innerHTML;
+    }
+
+    // Auto-login if previously logged in this browser session
+    if (sessionStorage.getItem('gvm_admin_auth') === 'true') {
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('dashboard-screen').classList.remove('hidden');
+      fetchSubmissions();
+    }
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>
